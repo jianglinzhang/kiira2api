@@ -33,14 +33,14 @@ async def chat_completions(
         msg_group_id = None
         msg_token = None
         for msg in request.messages:
+            # 这里改成从 assistant 内容中获取 group_id 和 token
             if getattr(msg, "role", None) == "assistant":
                 content = getattr(msg, "content", "")
                 if isinstance(content, str):
-                    group_id_match = re.search(r'Group ID:【(.*?)】', content)
-                    token_match = re.search(r'Token:【(.*?)】', content, re.DOTALL)
-                    if group_id_match and token_match:
-                        msg_group_id = group_id_match.group(1)
-                        msg_token = token_match.group(1)
+                    match = re.search(r'\{\s*"group_id"\s*:\s*"([^"]+)"\s*,\s*"token"\s*:\s*"([^"]+)"\s*\}', content)
+                    if match:
+                        msg_group_id = match.group(1)
+                        msg_token = match.group(2)
                         logger.info(f"获取到历史记录中的 Group ID: {msg_group_id}, Token: {msg_token[-20:]}")
                         break
         # 创建聊天服务实例
@@ -97,9 +97,14 @@ async def chat_completions(
                 done_sent = False
                 if len(request.messages) == 1:
                     # 发送group_id
-                    content = f"""<div style='color: rgb(0, 185, 107);'>Group ID:【{group_id}】</div>
-                                  <div style='color: rgb(0, 185, 130);'>Token:【{token}】</div>
-                                """
+                    # content = f"""<div style='color: rgb(0, 185, 107);'>Group ID:【{group_id}】</div>
+                    #               <div style='color: rgb(0, 185, 130);'>Token:【{token}】</div>
+                    #             """
+                    content = f"""
+                    ```json
+                    {{"group_id": "{group_id}", "token": "{token}"}}
+                    ```
+                    """
                     group_id_chunk = {
                         "id": response_id,
                         "object": "chat.completion.chunk",
