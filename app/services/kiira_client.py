@@ -92,9 +92,25 @@ class KiiraAIClient:
                     self.group_id = group_id
                     self.at_account_no = at_account_no
                     return group_id, at_account_no
-        
-        logger.warning(f"未在 user_list 中找到 '{agent_name}'")
-        return None
+        # 如果未找到，则获取 agent 列表，并创建聊天群组
+        logger.warning(f"未在 user_list 中找到 '{agent_name}'，正在尝试在agent 列表中获取 '{agent_name}'，并创建聊天群组")
+        agent_list = self.get_agent_list()
+        # 遍历 agent_list 中的每一个 agent，调用 create_chat_group
+        if agent_list and isinstance(agent_list, list):
+            for agent in agent_list:
+                label = agent.get("label", "")
+                if label in [agent_name]:
+                    account_no_base = agent.get("account_no")
+                    if account_no_base:
+                        group_info = self.create_chat_group([account_no_base], label)
+                        group_id = group_info.get("id")
+                        at_account_no = group_info.get("user_list", [])[0].get("account_no")
+                        self.group_id = group_id
+                        self.at_account_no = at_account_no
+                        return group_id, at_account_no
+        # 发送消息
+        logger.warning(f"未找到 '{agent_name}'")
+        return None, None
     
     def get_agent_list(self, category_ids: list[str] = [], keyword: str = "") -> Optional[Dict[str, Any]]:
         """
