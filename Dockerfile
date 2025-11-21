@@ -36,6 +36,8 @@ ENV PATH="/app/.venv/bin:$PATH" \
 # 暴露端口
 EXPOSE 8999
 
+USER 10014
+
 VOLUME ["/app/data"]
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
